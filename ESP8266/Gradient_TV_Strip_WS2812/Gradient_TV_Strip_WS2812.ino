@@ -26,7 +26,7 @@ IPAddress submask(255, 255, 255,   0);
 #define LIGHT_VERSION 4.0
 #define LIGHT_NAME_MAX_LENGTH 32 // Longer name will get stripped
 #define ENTERTAINMENT_TIMEOUT 1500 // millis
-#define POWER_MOSFET_PIN 13 // WS2812 consume ~1mA/led when off. By installing a MOSFET it will cut the power to the leds when lights ore off.
+#define POWER_MOSFET_PIN 12 // WS2812 consume ~1mA/led when off. By installing a MOSFET it will cut the power to the leds when lights ore off.
 
 struct state {
   uint8_t colors[3], bri = 100, sat = 254, colorMode = 2;
@@ -42,7 +42,7 @@ unsigned long lastEPMillis;
 
 //settings
 char lightName[LIGHT_NAME_MAX_LENGTH] = "Hue Gradient Strip";
-uint8_t scene, startup, onPin = 4, offPin = 5;
+uint8_t effect, scene, startup, onPin = 4, offPin = 5;
 bool hwSwitch = false;
 uint8_t rgb_multiplier[] = {100, 100, 100}; // light multiplier in percentage /R, G, B/
 
@@ -62,8 +62,8 @@ RgbColor green = RgbColor(0, 255, 0);
 RgbColor white = RgbColor(255);
 RgbColor black = RgbColor(0);
 
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>* strip = NULL;
-//NeoPixelBus<NeoBrgFeature, Neo800KbpsMethod>* strip = NULL; // WS2811
+NeoPixelBus<NeoGrbFeature, NeoEsp8266Uart1Ws2812xMethod>* strip = NULL;
+//NeoPixelBus<NeoBrgFeature, NeoEsp8266Uart1Ws2812xMethod>* strip = NULL; // WS2811
 
 void convertHue(uint8_t light) // convert hue / sat values from HUE API to RGB
 {
@@ -283,6 +283,28 @@ void processLightdata(uint8_t light, float transitiontime) { // calculate the st
   }
 }
 
+void candleEffect() {
+  for (uint8_t light = 0; light < lightsCount; light++) {
+    lights[light].colors[0] = random(170, 254);
+    lights[light].colors[1] = random(37, 62);
+    lights[light].colors[2] = 0;
+    for (uint8_t i = 0; i < 3; i++) {
+      lights[light].stepLevel[i] = ((float)lights[light].colors[i] - lights[light].currentColors[i]) / random(5, 15);
+    }
+  }
+}
+
+void firePlaceEffect() {
+  for (uint8_t light = 0; light < lightsCount; light++) {
+    lights[light].colors[0] = random(100, 254);
+    lights[light].colors[1] = random(10, 35);
+    lights[light].colors[2] = 0;
+    for (uint8_t i = 0; i < 3; i++) {
+      lights[light].stepLevel[i] = ((float)lights[light].colors[i] - lights[light].currentColors[i]) / random(5, 15);
+    }
+  }
+}
+
 RgbColor blending(float left[3], float right[3], uint8_t pixel) { // return RgbColor based on neighbour leds
   uint8_t result[3];
   for (uint8_t i = 0; i < 3; i++) {
@@ -304,10 +326,10 @@ void cutPower() {
     }
   }
   if (!any_on && !inTransition && mosftetState) {
-    digitalWrite(POWER_MOSFET_PIN, LOW);
+    digitalWrite(POWER_MOSFET_PIN, HIGH);
     mosftetState = false;
   } else if (any_on && !mosftetState){
-    digitalWrite(POWER_MOSFET_PIN, HIGH);
+    digitalWrite(POWER_MOSFET_PIN, LOW);
     mosftetState = true;
   }
 }
@@ -377,7 +399,13 @@ void lightEngine() {  // core function executed in loop()
   if (inTransition) { // wait 6ms for a nice transition effect
     delay(6);
     inTransition = false; // set inTransition bash to false (will be set bach to true on next level execution if desired state is not reached)
-  } else if (hwSwitch == true) { // if you want to use some GPIO's for on/off and brightness controll
+  } else {
+    if (effect == 1) { // candle effect
+      candleEffect();
+    } else if (effect == 2) { // fireplace effect
+      firePlaceEffect();
+    }
+    if (hwSwitch == true) { // if you want to use some GPIO's for on/off and brightness controll
     if (digitalRead(onPin) == HIGH) { // on button pressed
       int i = 0;
       while (digitalRead(onPin) == HIGH && i < 30) { // count how log is the button pressed
@@ -416,6 +444,7 @@ void lightEngine() {  // core function executed in loop()
           }
         }
       }
+    }
     }
   }
 }
@@ -576,8 +605,8 @@ void ChangeNeoPixels(uint16_t newCount) // this set the number of leds of the st
   if (strip != NULL) {
     delete strip; // delete the previous dynamically created strip
   }
-  strip = new NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod>(newCount); // and recreate with new count
-  //strip = new NeoPixelBus<NeoBrgFeature, Neo800KbpsMethod>(newCount); // and recreate with new count
+  strip = new NeoPixelBus<NeoGrbFeature, NeoEsp8266Uart1Ws2812xMethod>(newCount); // and recreate with new count
+  //strip = new NeoPixelBus<NeoBrgFeature, NeoEsp8266Uart1Ws2812xMethod>(newCount); // and recreate with new count
   strip->Begin();
 }
 
@@ -586,7 +615,7 @@ void setup() {
   //Serial.println();
   delay(500);
   pinMode(POWER_MOSFET_PIN, OUTPUT);
-  digitalWrite(POWER_MOSFET_PIN, HIGH); mosftetState = true; // reuired if HIGH logic power the strip, otherwise must be commented.
+  digitalWrite(POWER_MOSFET_PIN, LOW); mosftetState = true; // reuired if HIGH logic power the strip, otherwise must be commented.
 
   //Serial.println("mounting FS...");
 
@@ -679,6 +708,15 @@ void setup() {
     if (error) {
       server.send(404, "text/plain", "FAIL. " + server.arg("plain"));
     } else {
+      if (root.containsKey("effect")) {
+        if (root["effect"] == "no_effect") {
+          effect = 0;
+        } else if (root["effect"] == "candle") {
+          effect = 1;
+        } else if (root["effect"] == "fire") {
+          effect = 2;
+        }
+      }
 
       if (root.containsKey("gradient")) {
         if (root["gradient"].containsKey("points")) {

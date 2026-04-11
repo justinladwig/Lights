@@ -15,7 +15,7 @@ IPAddress submask(255, 255, 255,   0);
 #define LIGHT_VERSION 4.1
 #define LIGHT_NAME_MAX_LENGTH 32 // Longer name will get stripped
 #define ENTERTAINMENT_TIMEOUT 1500 // millis
-#define POWER_MOSFET_PIN 13 // WS2812 consume ~1mA/led when off. By installing a MOSFET it will cut the power to the leds when lights ore off.
+#define POWER_MOSFET_PIN 12 // WS2812 consume ~1mA/led when off. By installing a MOSFET it will cut the power to the leds when lights ore off.
 
 struct state {
   uint8_t colors[3], bri = 100, sat = 254, colorMode = 2;
@@ -50,8 +50,8 @@ RgbColor green = RgbColor(0, 255, 0);
 RgbColor white = RgbColor(255);
 RgbColor black = RgbColor(0);
 
-NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod>* strip = NULL;
-//NeoPixelBus<NeoBrgFeature, Neo800KbpsMethod>* strip = NULL; // WS2811
+NeoPixelBus<NeoGrbFeature, NeoEsp8266Uart1Ws2812xMethod>* strip = NULL;
+//NeoPixelBus<NeoBrgFeature, NeoEsp8266Uart1Ws2812xMethod>* strip = NULL; // WS2811
 
 
 void factoryReset() {
@@ -314,10 +314,10 @@ void cutPower() {
     }
   }
   if (!any_on && !inTransition && mosftetState) {
-    digitalWrite(POWER_MOSFET_PIN, LOW);
+    digitalWrite(POWER_MOSFET_PIN, HIGH);
     mosftetState = false;
   } else if (any_on && !mosftetState) {
-    digitalWrite(POWER_MOSFET_PIN, HIGH);
+    digitalWrite(POWER_MOSFET_PIN, LOW);
     mosftetState = true;
   }
 }
@@ -604,8 +604,8 @@ void ChangeNeoPixels(uint16_t newCount) // this set the number of leds of the st
   if (strip != NULL) {
     delete strip; // delete the previous dynamically created strip
   }
-  strip = new NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod>(newCount); // and recreate with new count
-  //strip = new NeoPixelBus<NeoBrgFeature, Neo800KbpsMethod>(newCount); // and recreate with new count
+  strip = new NeoPixelBus<NeoGrbFeature, NeoEsp8266Uart1Ws2812xMethod>(newCount); // and recreate with new count
+  //strip = new NeoPixelBus<NeoBrgFeature, NeoEsp8266Uart1Ws2812xMethod>(newCount); // and recreate with new count
   strip->Begin();
 }
 
@@ -614,7 +614,7 @@ void setup() {
   //Serial.println();
   delay(500);
   pinMode(POWER_MOSFET_PIN, OUTPUT);
-  digitalWrite(POWER_MOSFET_PIN, HIGH); mosftetState = true; // reuired if HIGH logic power the strip, otherwise must be commented.
+  digitalWrite(POWER_MOSFET_PIN, LOW); mosftetState = true; // reuired if HIGH logic power the strip, otherwise must be commented.
 
   //Serial.println("mounting FS...");
 

@@ -15,7 +15,7 @@ IPAddress submask(255, 255, 255,   0);
 #define LIGHT_VERSION 4.2
 #define LIGHT_NAME_MAX_LENGTH 32 // Longer name will get stripped
 #define ENTERTAINMENT_TIMEOUT 1500 // millis
-#define POWER_MOSFET_PIN 13 // WS2812 consume ~1mA/led when off. By installing a MOSFET it will cut the power to the leds when lights ore off.
+#define POWER_MOSFET_PIN 12 // WS2812 consume ~1mA/led when off. By installing a MOSFET it will cut the power to the leds when lights ore off.
 
 // Reference:
 // https://andi-siess.de/rgb-to-color-temperature/
@@ -373,10 +373,10 @@ RgbwColor convFloat(float color[4]) { // return RgbColor from float
 void togglePower() {
 
   if (!lightState && !inTransition && mosftetState) {
-    digitalWrite(POWER_MOSFET_PIN, LOW);
+    digitalWrite(POWER_MOSFET_PIN, HIGH);
     mosftetState = false;
   } else if (lightState && !mosftetState) {
-    digitalWrite(POWER_MOSFET_PIN, HIGH);
+    digitalWrite(POWER_MOSFET_PIN, LOW);
     mosftetState = true;
     delay(50);
   }
@@ -641,7 +641,7 @@ void setup() {
   //Serial.println();
   delay(500);
   pinMode(POWER_MOSFET_PIN, OUTPUT);
-  digitalWrite(POWER_MOSFET_PIN, HIGH); mosftetState = true; // reuired if HIGH logic power the strip, otherwise must be commented.
+  digitalWrite(POWER_MOSFET_PIN, LOW); mosftetState = true; // reuired if HIGH logic power the strip, otherwise must be commented.
 
   //Serial.println("mounting FS...");
 
