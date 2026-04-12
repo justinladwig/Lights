@@ -318,8 +318,8 @@ RgbColor convFloat(float color[3]) { // return RgbColor from float
   return RgbColor((uint8_t)color[0], (uint8_t)color[1], (uint8_t)color[2]);
 }
 
-void cutPower() {
-  bool any_on = false;
+void managePowerState() {
+  bool any_on = entertainmentRun; // if entertainment mode is on, never cut power
   for (int light = 0; light < lightsCount; light++) {
     if (lights[light].lightState) {
       any_on = true;
@@ -395,7 +395,7 @@ void lightEngine() {  // core function executed in loop()
       }
     }
   }
-  cutPower(); // can be commented if mosfet power is not used
+  managePowerState(); // can be commented if mosfet power is not used
   if (inTransition) { // wait 6ms for a nice transition effect
     delay(6);
     inTransition = false; // set inTransition bash to false (will be set bach to true on next level execution if desired state is not reached)
@@ -924,6 +924,7 @@ void entertainment() { // entertainment function
   if (packetSize) { // if nr of bytes is more than zero
     if (!entertainmentRun) { // announce entertainment is running
       entertainmentRun = true;
+      managePowerState(); // enable mosfet power for the strip if turned off<
     }
     lastEPMillis = millis(); // update variable with last received package timestamp
     Udp.read(packetBuffer, packetSize);

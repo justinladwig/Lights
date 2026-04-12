@@ -296,8 +296,8 @@ RgbColor convFloat(float color[3]) { // return RgbColor from float
 }
 
 
-void cutPower() {
-  bool any_on = false;
+void managePowerState() {
+  bool any_on = entertainmentRun; // if entertainment mode is on, never cut power
   for (int light = 0; light < lightsCount; light++) {
     if (lights[light].lightState) {
       any_on = true;
@@ -359,7 +359,7 @@ void lightEngine() {  // core function executed in loop()
       strip->Show(); //show what was calculated previously 
     }
   }
-  cutPower(); // if all lights are off GPIO12 can cut the power to the strip using a powerful P-Channel MOSFET
+  managePowerState(); // if all lights are off GPIO12 can cut the power to the strip using a powerful P-Channel MOSFET
   if (inTransition) { // wait 6ms for a nice transition effect
     delay(6);
     inTransition = false; // set inTransition bash to false (will be set bach to true on next level execution if desired state is not reached)
@@ -856,6 +856,7 @@ void entertainment() { // entertainment function
   if (packetSize) { // if nr of bytes is more than zero
     if (!entertainmentRun) { // announce entertainment is running
       entertainmentRun = true;
+      managePowerState();
     }
     lastEPMillis = millis(); // update variable with last received package timestamp
     Udp.read(packetBuffer, packetSize);

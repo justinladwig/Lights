@@ -372,10 +372,10 @@ RgbwColor convFloat(float color[4]) { // return RgbColor from float
 
 void togglePower() {
 
-  if (!lightState && !inTransition && mosftetState) {
+  if (!lightState && !entertainmentRun && !inTransition && mosftetState) {
     digitalWrite(POWER_MOSFET_PIN, HIGH);
     mosftetState = false;
-  } else if (lightState && !mosftetState) {
+  } else if ((lightState || entertainmentRun) && !mosftetState) {
     digitalWrite(POWER_MOSFET_PIN, LOW);
     mosftetState = true;
     delay(50);
@@ -948,6 +948,7 @@ void entertainment() { // entertainment function
   if (packetSize) { // if nr of bytes is more than zero
     if (!entertainmentRun) { // announce entertainment is running
       entertainmentRun = true;
+      togglePower();
     }
     lastEPMillis = millis(); // update variable with last received package timestamp
     Udp.read(packetBuffer, packetSize);

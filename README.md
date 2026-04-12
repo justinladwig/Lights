@@ -2,8 +2,9 @@
 This is a fork of https://github.com/diyhue/Lights
 
 Modifications:
- - Compatibility with GLEDOPTO GL-C-014WL ESP8266 LED controller hardware (original firmware must be replaced)
+- Compatibility with GLEDOPTO GL-C-014WL ESP8266 LED controller hardware (original firmware must be replaced)
 -  Addition of the “Fire” and “Candle” effects to the Gradient TV Strip firmware
+- Now also turn on the MOSFET when Entertainment mode is activated from the off state.
 
 
 # Lights
