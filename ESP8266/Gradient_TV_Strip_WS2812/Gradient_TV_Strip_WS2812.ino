@@ -285,8 +285,9 @@ void processLightdata(uint8_t light, float transitiontime) { // calculate the st
 
 void candleEffect() {
   for (uint8_t light = 0; light < lightsCount; light++) {
-    lights[light].colors[0] = random(170, 254);
-    lights[light].colors[1] = random(37, 62);
+    float brightnessScale = lights[light].bri / 254.0f;
+    lights[light].colors[0] = (uint8_t)(random(170, 254) * brightnessScale);
+    lights[light].colors[1] = (uint8_t)(random(37, 62) * brightnessScale);
     lights[light].colors[2] = 0;
     for (uint8_t i = 0; i < 3; i++) {
       lights[light].stepLevel[i] = ((float)lights[light].colors[i] - lights[light].currentColors[i]) / random(5, 15);
@@ -296,8 +297,9 @@ void candleEffect() {
 
 void firePlaceEffect() {
   for (uint8_t light = 0; light < lightsCount; light++) {
-    lights[light].colors[0] = random(100, 254);
-    lights[light].colors[1] = random(10, 35);
+    float brightnessScale = lights[light].bri / 254.0f;
+    lights[light].colors[0] = (uint8_t)(random(100, 254) * brightnessScale);
+    lights[light].colors[1] = (uint8_t)(random(10, 35) * brightnessScale);
     lights[light].colors[2] = 0;
     for (uint8_t i = 0; i < 3; i++) {
       lights[light].stepLevel[i] = ((float)lights[light].colors[i] - lights[light].currentColors[i]) / random(5, 15);
